@@ -43,7 +43,10 @@
       likes: num(o.like_count),
       comments: num(o.comment_count),
       reposts: num(o.media_repost_count),
-      shares: num(o.reshare_count), // paper-plane (send) count; separate from reposts on IG web
+      // Paper-plane (send) count, separate from reposts. IG draws no number for 0, and a 0 also
+      // comes on large reels where shares are clearly not 0, so 0 is treated as not exposed.
+      shares: num(o.reshare_count) > 0 ? o.reshare_count : null,
+      sharesHidden: typeof o.share_count_disabled === 'boolean' ? o.share_count_disabled : null,
       plays: num(o.play_count) != null ? num(o.play_count)
            : (num(o.view_count) != null ? num(o.view_count) : num(o.ig_play_count)),
       countsDisabled: typeof o.like_and_view_counts_disabled === 'boolean' ? o.like_and_view_counts_disabled : null,
@@ -239,7 +242,7 @@
         }
         if (!node) continue;
         const rec = normalize(node);
-        const sig = [rec.likes, rec.comments, rec.reposts, rec.shares, rec.plays, rec.takenAt, rec.countsDisabled, rec.shortcode].join('|');
+        const sig = [rec.likes, rec.comments, rec.reposts, rec.shares, rec.sharesHidden, rec.plays, rec.takenAt, rec.countsDisabled, rec.shortcode].join('|');
         if (scrapeSig.get(art) === sig) continue;
         scrapeSig.set(art, sig);
         out.push(rec);
@@ -275,7 +278,7 @@
         const r = src.get(id);
         if (!isMediaNode(r)) continue;
         const rec = normalize(Object.assign({}, r, { user: deref(r.user), owner: deref(r.owner) }));
-        const sig = [rec.shortcode, rec.likes, rec.comments, rec.reposts, rec.shares, rec.plays, rec.takenAt, rec.countsDisabled, rec.author].join('|');
+        const sig = [rec.shortcode, rec.likes, rec.comments, rec.reposts, rec.shares, rec.sharesHidden, rec.plays, rec.takenAt, rec.countsDisabled, rec.author].join('|');
         if (storeSig.get(id) === sig) continue;
         storeSig.set(id, sig);
         out.push(rec);

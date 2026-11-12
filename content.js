@@ -57,6 +57,7 @@
       shares: int(r.shares),
       plays: int(r.plays),
       countsDisabled: r.countsDisabled === true ? true : (r.countsDisabled === false ? false : null),
+      sharesHidden: r.sharesHidden === true ? true : (r.sharesHidden === false ? false : null),
       mediaType: int(r.mediaType),
       productType: typeof r.productType === 'string' ? r.productType.slice(0, 32) : null,
       author: typeof r.author === 'string' && /^[A-Za-z0-9._]{1,40}$/.test(r.author) ? r.author : null
@@ -81,6 +82,7 @@
     for (const k of ['takenAt', 'likes', 'comments', 'reposts', 'shares', 'plays', 'mediaType', 'productType', 'author']) {
       if (b[k] != null) out[k] = b[k];
     }
+    if (b.sharesHidden != null) out.sharesHidden = b.sharesHidden;
     if (b.countsDisabled != null) out.countsDisabled = b.countsDisabled; // only a present report wins (a count-less duplicate keeps the prior flag)
     if (b.pk != null) out.pk = b.pk;
     return out;
@@ -153,7 +155,9 @@
       : countCell('heart', rec.likes));
     host.appendChild(countCell('comment', rec.comments));
     host.appendChild(countCell('repost', rec.reposts));
-    host.appendChild(countCell('share', rec.shares));
+    host.appendChild(rec.sharesHidden === true
+      ? metric('share', 'hidden', 'unavailable', 'Share count hidden by the author')
+      : countCell('share', rec.shares));
     if (rec.takenAt != null) {
       host.appendChild(metric('calendar', fmtDate(rec.takenAt), 'confirmed'));
       host.appendChild(metric('clock', fmtTime(rec.takenAt), 'confirmed', new Date(rec.takenAt * 1000).toString()));
@@ -223,27 +227,29 @@
     return best ? best.a : null;
   }
 
-  // Drop the pill onto its own line UNDER the author(s). Climb from the username to the
-  // nearest vertical header column (flex-direction:column with 2+ children, e.g. byline
-  // over "Original audio") and insert the pill right after the child that holds the
-  // byline. That child holds the WHOLE byline ("X and Y", "X and 4 others"), so collab
-  // names are never split, and the pill never lands inside IG's overflow-hidden name span.
-  // Probe-verified live on the home feed, a single post page, and both collab shapes.
+  // Drop the pill onto its own line UNDER the author(s). Climb from the username while the
+  // ancestors stay header-sized (<=700 wide, <=260 tall) and remember the OUTERMOST vertical
+  // column (flex-direction:column, >=200 wide); insert the pill right after the block that
+  // holds the byline inside it. That block holds the WHOLE header row (name, check, Follow,
+  // "X and Y", "and 4 others"), so nothing gets split or squeezed. Children are not counted:
+  // a one-line header's column has a single child. Probe-verified live on the home feed,
+  // full post pages (one-line header, 335 px panel) and collab bylines.
   // Returns false (inserts nothing) if no column is found, so callers can fall back.
   function insertUnder(anchor, pill) {
-    let row = anchor;
+    let row = anchor, best = null;
+    // Measure ancestors without our own pill, so a re-place never moves it (and loops).
+    const ph = pill.isConnected ? pill.getBoundingClientRect().height + 6 : 0;
     for (let i = 0; i < 18 && row.parentElement; i++) {
       const p = row.parentElement;
       const pr = p.getBoundingClientRect();
-      if (pr.width > 700 || pr.height > 260) return false; // left the header: no confident stop
+      if (pr.width > 700 || pr.height - (ph && p.contains(pill) ? ph : 0) > 260) break; // left the header
       const cs = getComputedStyle(p);
-      if (cs.display.indexOf('flex') >= 0 && cs.flexDirection === 'column' && pr.width >= 200 && p.children.length >= 2) {
-        if (row.nextElementSibling !== pill) row.insertAdjacentElement('afterend', pill);
-        return true;
-      }
+      if (cs.display.indexOf('flex') >= 0 && cs.flexDirection === 'column' && pr.width >= 200) best = row;
       row = p;
     }
-    return false;
+    if (!best) return false;
+    if (best.nextElementSibling !== pill) best.insertAdjacentElement('afterend', pill);
+    return true;
   }
 
   // Inline under the header when an anchor exists and a column was found; otherwise float top-right.
@@ -286,7 +292,8 @@
       else if (r.likes != null) items.push(['heart', abbrev(r.likes)]);
       if (r.comments != null) items.push(['comment', abbrev(r.comments)]);
       if (r.reposts != null) items.push(['repost', abbrev(r.reposts)]);
-      if (r.shares != null) items.push(['share', abbrev(r.shares)]);
+      if (r.sharesHidden === true) items.push(['share', 'hidden', 'unavailable']);
+      else if (r.shares != null) items.push(['share', abbrev(r.shares)]);
       if (r.takenAt != null) {
         items.push(['calendar', fmtDate(r.takenAt)]);
         items.push(['clock', fmtTime(r.takenAt)]);
@@ -305,7 +312,7 @@
   // (shortcode + values) drives rebuilds: when a virtualized tile is recycled to a
   // new shortcode, or fresher data arrives for the same one, the badge is rebuilt;
   // when a tile no longer maps to cached data, its stale badge is removed.
-  function tileSig(rec) { return rec ? [rec.plays, rec.likes, rec.comments, rec.reposts, rec.shares, rec.takenAt, rec.countsDisabled ? 1 : 0].join('|') : ''; }
+  function tileSig(rec) { return rec ? [rec.plays, rec.likes, rec.comments, rec.reposts, rec.shares, rec.takenAt, rec.countsDisabled ? 1 : 0, rec.sharesHidden ? 1 : 0].join('|') : ''; }
   function clearBadge(a) {
     const ex = a.querySelector(':scope > .igro-badge');
     if (ex) ex.remove();
@@ -327,7 +334,7 @@
       if (r.width < 100 || r.height < 100) { if (a.dataset.igroBadged) clearBadge(a); continue; }
       if (r.top > innerHeight + 300 || r.bottom < -300) continue; // offscreen: revisit on scroll
       const rec = cache.get(code);
-      const hasCacheMetric = !!rec && (rec.plays != null || rec.likes != null || rec.comments != null || rec.reposts != null || rec.shares != null || rec.takenAt != null);
+      const hasCacheMetric = !!rec && (rec.plays != null || rec.likes != null || rec.comments != null || rec.reposts != null || rec.shares != null || rec.sharesHidden === true || rec.takenAt != null);
       // DOM fallback: reels-tab tiles show IG's own play count (beside a view-count
       // icon). Gate on that icon so we never mistake a caption or comment number for
       // the count. Used whenever our cache lacks exact plays — so a tile that cached
@@ -367,7 +374,7 @@
   // into the card header next to the author, keyed off that shortcode.
   // Full signature for a feed pill (rebuild on any visible field changing).
   function feedSig(rec) {
-    return rec ? [rec.plays, rec.likes, rec.comments, rec.reposts, rec.shares, rec.takenAt, rec.countsDisabled ? 1 : 0, rec.author].join('|') : '';
+    return rec ? [rec.plays, rec.likes, rec.comments, rec.reposts, rec.shares, rec.takenAt, rec.countsDisabled ? 1 : 0, rec.sharesHidden ? 1 : 0, rec.author].join('|') : '';
   }
   // The post card: nearest <article>, or a bounded block (300–750px wide, ≥300 tall).
   // Never body/html/the feed column, so two posts can't share one card.
