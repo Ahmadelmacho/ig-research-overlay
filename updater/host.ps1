@@ -20,7 +20,15 @@ function Get-Sha($p) { $s = [IO.File]::OpenRead($p); try { [BitConverter]::ToStr
 
 function Get-Latest {
   $h = @{ 'User-Agent' = 'igro-updater'; 'Accept' = 'application/vnd.github+json' }
-  Invoke-RestMethod -Uri "$ApiBase/repos/$Repo/releases/latest" -Headers $h
+  try { Invoke-RestMethod -Uri "$ApiBase/repos/$Repo/releases/latest" -Headers $h }
+  catch [Net.WebException] {
+    $r = $_.Exception.Response
+    # GitHub allows 60 unauthenticated API calls an hour per network; say so plainly.
+    if ($r -and ([int]$r.StatusCode -in @(403, 429)) -and ($r.Headers['X-RateLimit-Remaining'] -eq '0')) {
+      throw 'GitHub is limiting update checks from this network right now (60 an hour). Try again in an hour.'
+    }
+    throw
+  }
 }
 
 function Invoke-Check {
