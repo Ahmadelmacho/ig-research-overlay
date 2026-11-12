@@ -67,7 +67,8 @@ Media object (in embedded JSON on hard load, and in graphql responses):
 `media_repost_count` (the 🔁), `play_count`/`view_count`/`ig_play_count` (plays, often
 absent), `code` (shortcode), `pk`, `media_type`, `product_type`, `user.username`/`owner.username`
 (author). No public save count exists. Web API = single `POST /api/graphql` (no `/api/v1/`).
-`reshare_count` = the paper-plane share count. When `like_and_view_counts_disabled` is true,
+`reshare_count` = the paper-plane share count (`share_count_disabled` true → "hidden"; 0 → `—`,
+IG draws no number for 0 and sends 0 on some large reels). When `like_and_view_counts_disabled` is true,
 `like_count` is a small stand-in (seen as 3 on posts with thousands of comments/plays), so
 likes show "hidden"; plays stay shown. Some SSR data arrives as a JSON *string*
 (`__bbox.result.response`) that must be parsed; IG's in-memory Relay store also holds media
