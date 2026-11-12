@@ -1,0 +1,21 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>IG Research Overlay</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <h1>IG Research Overlay</h1>
+  <p class="dim">Version <span id="ver"></span></p>
+  <button id="check">Check for updates</button>
+  <p id="status" role="status" aria-live="polite"></p>
+  <button id="update" hidden></button>
+  <div id="install" hidden>
+    <p>The updater is not installed. Paste this into PowerShell, then try again:</p>
+    <code id="cmd">irm https://raw.githubusercontent.com/Ahmadelmacho/ig-research-overlay/main/get.ps1 | iex</code>
+    <button id="copy">Copy</button>
+  </div>
+  <script src="popup.js"></script>
+</body>
+</html>

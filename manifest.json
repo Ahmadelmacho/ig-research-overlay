@@ -1,0 +1,39 @@
+{
+  "manifest_version": 3,
+  "name": "IG Research Overlay",
+  "version": "0.2.0",
+  "description": "Local, passive overlay of public Instagram engagement metrics and exact publish time. Reads only data Instagram already loads; makes no network requests of its own.",
+  "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAkdI3fhXgEGSxnj8LCNs8x6VS4QQ14xfQI1X3zsx61cLo97axJERlTnGyBpwnFlA18bhcOEXQg0IBnClOlI98im9G5sgod2/kN+GLJ2kVMIan6FZZIvgSQqam5/hguPXrojrmuKnF9xfunDckvu6Ufc18RPFwg5AAFoyIw4PLA927atEB2VAg4C9UvwIr2FhKoYVnC6Vi+Pr+K9CCdNHswdaIjLAB7XkRxuJmZu8u/9fR6j5rNaCHEdxQJJGP18w/1NpUZT6i1rn7oyIMQvh4/mplAgqyONef/6fGN9Mc6VeC6FIJWdyHvoLLrHxX2fpPL3DkU1YzeO1DsVXo7Sk/QQIDAQAB",
+  "permissions": [
+    "nativeMessaging"
+  ],
+  "action": {
+    "default_title": "IG Research Overlay",
+    "default_popup": "popup.html"
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "https://www.instagram.com/*"
+      ],
+      "run_at": "document_start",
+      "world": "MAIN",
+      "js": [
+        "inject.js"
+      ]
+    },
+    {
+      "matches": [
+        "https://www.instagram.com/*"
+      ],
+      "run_at": "document_start",
+      "world": "ISOLATED",
+      "js": [
+        "content.js"
+      ],
+      "css": [
+        "overlay.css"
+      ]
+    }
+  ]
+}

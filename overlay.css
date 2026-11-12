@@ -1,0 +1,85 @@
+/* ---- shared pill look (single-media overlay + per-feed-card pill) ---- */
+.igro-pill {
+  z-index: 2147483647;
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 11px;
+  padding: 6px 11px;
+  border-radius: 12px;
+  background: rgba(18, 18, 20, 0.82);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: #f4f4f5;
+  font: 600 12px/1.1 -apple-system, "Segoe UI", Roboto, sans-serif;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35);
+  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
+  pointer-events: none; /* click-through so it never blocks Instagram's controls */
+  user-select: none;
+}
+/* floating position, single-media only (not when inline-injected into a header) */
+#igro-overlay:not(.igro-inline) { position: fixed; top: 64px; right: 12px; max-width: 60vw; } /* below the player's Close (X) */
+/* inline: injected into a header row next to the username */
+.igro-pill.igro-inline {
+  position: static;
+  display: inline-flex;
+  align-self: flex-start; /* don't stretch to full width when appended into a flex column */
+  margin: 3px 0 2px;
+  max-width: none;
+  padding: 4px 9px;
+  box-shadow: none;
+  background: rgba(18, 18, 20, 0.7);
+}
+.igro-pill .igro-m { display: inline-flex; align-items: center; gap: 5px; white-space: nowrap; }
+.igro-pill .igro-i { display: inline-flex; }
+.igro-pill .igro-i svg { width: 13px; height: 13px; display: block; }
+.igro-pill .igro-v { font-variant-numeric: tabular-nums; letter-spacing: 0.1px; }
+.igro-pill .igro-unavailable { opacity: 0.38; }
+
+/* per-metric accent colors (shared by pill + badge) */
+.igro-i--play { color: #22c55e; }
+.igro-i--heart { color: #ff3b5c; }
+.igro-i--comment { color: #9aa4b2; }
+.igro-i--repost { color: #2dd4bf; }
+.igro-i--share { color: #60a5fa; }
+.igro-i--calendar { color: #9aa4b2; }
+.igro-i--clock { color: #f59e0b; }
+.igro-unavailable .igro-i { color: currentColor; }
+.igro-pill .igro-approx .igro-v { color: #f0b429; }
+.igro-pill .igro-pending { opacity: 0.6; font-style: italic; }
+
+@media (prefers-color-scheme: light) {
+  .igro-pill {
+    background: rgba(255, 255, 255, 0.9);
+    border-color: rgba(0, 0, 0, 0.08);
+    color: #18181b;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+  }
+  .igro-pill.igro-inline { background: rgba(255, 255, 255, 0.75); }
+}
+
+/* ---- profile/grid/reels-tab thumbnail badge (top-left, clears IG's own count) ---- */
+.igro-badge {
+  position: absolute;
+  left: 8px;
+  top: 8px;
+  z-index: 12;
+  display: inline-flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  max-width: calc(100% - 16px);
+  padding: 6px 8px;
+  border-radius: 10px;
+  background: rgba(0, 0, 0, 0.58);
+  color: #fff;
+  font: 700 12px/1 -apple-system, "Segoe UI", Roboto, sans-serif;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+  pointer-events: none;
+  -webkit-backdrop-filter: blur(6px);
+  backdrop-filter: blur(6px);
+}
+.igro-badge .igro-m { display: inline-flex; align-items: center; gap: 5px; }
+.igro-badge .igro-i { display: inline-flex; }
+.igro-badge .igro-i svg { width: 13px; height: 13px; display: block; }
+.igro-badge .igro-v { font-variant-numeric: tabular-nums; }
